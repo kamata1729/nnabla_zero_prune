@@ -17,32 +17,24 @@ from tqdm import tqdm
 from nnabla.models.imagenet import ResNet18
 
 def get_output(f):
-    params = nn.get_parameters()
-    p2n = {v: k for k, v in params.items()}
-    # 全てのconvolutionの次にbatchnormが存在すると仮定
-    if f.name=='Convolution':
-        outs.append(f.outputs[0])
     if f.name=='BatchNormalization':
         stat = {}
-        for inp in f.inputs:
-            if inp in p2n:
-                name = p2n[inp]
-                if 'beta' in name:
-                    stat['beta'] = inp
-                if 'gamma' in name:
-                    stat['gamma'] = inp
+        outs.append(f.inputs[0])
+        stat['running_mean'] = f.inputs[3]
+        print('neg', np.sum(f.inputs[4].d < 0))
+        stat['running_std'] = (f.inputs[4] + 1e-6)**0.5
         batch_stats.append(stat)
 
 
 def data_distill(uniform_data_iterator, num_iter):
     generated_img = []
+    solver = S.Adam(alpha=0.5)
     for _ in range(uniform_data_iterator.size):
         dst_img = nn.Variable((bsize, 3, 224, 224), need_grad=True)
         img, _ = uniform_data_iterator.next()
         dst_img.d = img
         img_params = OrderedDict()
         img_params['img'] = dst_img
-        solver = S.Adam(alpha=0.5)
         solver.set_parameters(img_params)
 
         dummy_solver = S.Sgd(lr=1e-3)
@@ -71,8 +63,8 @@ def data_distill(uniform_data_iterator, num_iter):
 
 def save_generated_img(generated_img, save_path):
     for index, batch_img in enumerate(generated_img):
-        bsize = generated_img.shape[0]
-        for i in range(len(bsize)):
+        bsize = batch_img.shape[0]
+        for i in range(bsize):
             img = batch_img[i].transpose((1,2,0))
             cv2.imwrite(f'{save_path}/{index*bsize+i}.png', img)
 
@@ -80,9 +72,9 @@ def save_generated_img(generated_img, save_path):
 
 if __name__ == '__main__':
     model = ResNet18()
-    data_length = 10
+    data_length = 2
     uniform_data_source = UniformData(length=data_length, train=True, shuffle=True, rng=None)
-    bsize = 10
+    bsize = 2
     uniform_data_iterator = data_iterator(uniform_data_source, 
                                         batch_size=bsize, 
                                         rng=None, 
