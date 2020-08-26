@@ -4,6 +4,7 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 from nnabla.utils.data_iterator import data_iterator
 from nnabla.utils.data_source import DataSource
+import nnabla.utils.learning_rate_scheduler as lr_scheduler
 import nnabla.solvers as S
 from collections import OrderedDict
 
@@ -21,27 +22,33 @@ def get_output(f):
         stat = {}
         outs.append(f.inputs[0])
         stat['running_mean'] = f.inputs[3]
-        print('neg', np.sum(f.inputs[4].d < 0))
         stat['running_std'] = (f.inputs[4] + 1e-6)**0.5
         batch_stats.append(stat)
 
 
 def data_distill(uniform_data_iterator, num_iter):
     generated_img = []
-    solver = S.Adam(alpha=0.5)
+    
+
     for _ in range(uniform_data_iterator.size):
         dst_img = nn.Variable((bsize, 3, 224, 224), need_grad=True)
         img, _ = uniform_data_iterator.next()
         dst_img.d = img
         img_params = OrderedDict()
         img_params['img'] = dst_img
-        solver.set_parameters(img_params)
 
-        dummy_solver = S.Sgd(lr=1e-3)
+        solver = S.Adam(alpha=0.5)
+        solver.set_parameters(img_params)
+        scheduler = lr_scheduler.CosineScheduler(init_lr=0.5, max_iter=num_iter)
+
+        dummy_solver = S.Sgd(lr=0)
         dummy_solver.set_parameters(nn.get_parameters())
 
         for it in tqdm(range(num_iter)):
             print(it)
+            lr = scheduler.get_learning_rate(it)
+            solver.set_learning_rate(lr)
+
             global outs
             outs = []
             global batch_stats
@@ -66,6 +73,7 @@ def save_generated_img(generated_img, save_path):
         bsize = batch_img.shape[0]
         for i in range(bsize):
             img = batch_img[i].transpose((1,2,0))
+            img = np.clip(img * np.sqrt(5418.75) + 127.5, 0, 254).astype(np.uint8)
             cv2.imwrite(f'{save_path}/{index*bsize+i}.png', img)
 
 
