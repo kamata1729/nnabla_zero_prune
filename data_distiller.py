@@ -20,18 +20,28 @@ from nnabla.models.imagenet import ResNet18
 
 def get_output(f):
     if f.name=='BatchNormalization':
+        """
+        f.inputs = [
+            input feature,
+            gamma of bn,
+            beta of bn,
+            running_mean,
+            running_std
+        ]
+        """
         stat = {}
         outs.append(f.inputs[0])
-        stat['running_mean'] = f.inputs[3]
-        stat['running_std'] = (f.inputs[4] + 1e-6)**0.5
+        stat['running_mean'] = nn.Variable.from_numpy_array(f.inputs[3].d, need_grad=False)
+        stat['running_std'] = nn.Variable.from_numpy_array((f.inputs[4].d + 1e-6)**0.5, need_grad=False) 
         batch_stats.append(stat)
 
 
-def data_distill(uniform_data_iterator, num_iter):
+def data_distill(model, uniform_data_iterator, num_iter):
     generated_img = []
-    for _ in range(uniform_data_iterator.size):
-        dst_img = nn.Variable((bsize, 3, 224, 224), need_grad=True)
+    for _ in range(uniform_data_iterator.size // uniform_data_iterator.batch_size):
         img, _ = uniform_data_iterator.next()
+        print((*img.shape))
+        dst_img = nn.Variable(img.shape, need_grad=True)
         dst_img.d = img
         img_params = OrderedDict()
         img_params['img'] = dst_img
@@ -44,7 +54,6 @@ def data_distill(uniform_data_iterator, num_iter):
         dummy_solver.set_parameters(nn.get_parameters())
 
         for it in tqdm(range(num_iter)):
-            print(it)
             lr = scheduler.get_learning_rate()
             solver.set_learning_rate(lr)
 
@@ -91,7 +100,8 @@ if __name__ == '__main__':
                                         with_memory_cache=False,
                                         with_file_cache=False)
 
-    generated_img = data_distill(uniform_data_iterator, 2)
+    generated_img = data_distill(model, uniform_data_iterator, 2)
     save_generated_img(generated_img, 'generated')
+
 
     

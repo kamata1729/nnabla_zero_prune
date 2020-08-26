@@ -2,6 +2,21 @@ import warnings
 import nnabla.utils.learning_rate_scheduler as lr_scheduler
 
 class ReduceLROnPlateauScheduler(lr_scheduler.BaseLearningRateScheduler):
+    '''
+    nnabla implementation of https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#ReduceLROnPlateau
+    usage:
+        ```
+        scheduler = ReduceLROnPlateauScheduler(init_lr=0.1)
+        solver = S.Sgd(lr=0.1)
+        for epoch in range(epochs):
+            lr = scheduler.get_learning_rate()
+            solver.set_learning_rate(lr)
+            train(...)
+            val_loss = valid(...)
+            scheduler.update_lr(val_loss.d)
+        ```
+    '''
+
     def __init__(self, init_lr, mode='min', factor=0.1, patience=10, 
                  verbose=False, threshold=1e-4, threshold_mode='rel',
                  cooldown=0, min_lr=0, eps=1e-8):
@@ -12,6 +27,7 @@ class ReduceLROnPlateauScheduler(lr_scheduler.BaseLearningRateScheduler):
         self.factor = factor
         
         self.patience = patience
+        self.verbose = verbose
         self.cooldown = cooldown
         self.cooldown_counter = 0
         self.mode = mode
