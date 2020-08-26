@@ -1,7 +1,7 @@
 import warnings
 import nnabla.utils.learning_rate_scheduler as lr_scheduler
 
-class ReduceLROnPlateau(lr_scheduler.BaseLearningRateScheduler):
+class ReduceLROnPlateauScheduler(lr_scheduler.BaseLearningRateScheduler):
     def __init__(self, init_lr, mode='min', factor=0.1, patience=10, 
                  verbose=False, threshold=1e-4, threshold_mode='rel',
                  cooldown=0, min_lr=0, eps=1e-8):

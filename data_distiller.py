@@ -39,7 +39,7 @@ def data_distill(uniform_data_iterator, num_iter):
         solver = S.Adam(alpha=0.5)
         solver.set_parameters(img_params)
         #scheduler = lr_scheduler.CosineScheduler(init_lr=0.5, max_iter=num_iter)
-        scheduler = ReduceLROnPlateau(init_lr=0.5)
+        scheduler = ReduceLROnPlateauScheduler(init_lr=0.5, min_lr=1e-4, verbose=False, patience=100)
         dummy_solver = S.Sgd(lr=0)
         dummy_solver.set_parameters(nn.get_parameters())
 
