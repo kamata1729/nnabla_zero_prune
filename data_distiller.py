@@ -5,6 +5,7 @@ import nnabla.parametric_functions as PF
 from nnabla.utils.data_iterator import data_iterator
 from nnabla.utils.data_source import DataSource
 import nnabla.utils.learning_rate_scheduler as lr_scheduler
+from scheduler import *
 import nnabla.solvers as S
 from collections import OrderedDict
 
@@ -28,8 +29,6 @@ def get_output(f):
 
 def data_distill(uniform_data_iterator, num_iter):
     generated_img = []
-    
-
     for _ in range(uniform_data_iterator.size):
         dst_img = nn.Variable((bsize, 3, 224, 224), need_grad=True)
         img, _ = uniform_data_iterator.next()
@@ -39,14 +38,14 @@ def data_distill(uniform_data_iterator, num_iter):
 
         solver = S.Adam(alpha=0.5)
         solver.set_parameters(img_params)
-        scheduler = lr_scheduler.CosineScheduler(init_lr=0.5, max_iter=num_iter)
-
+        #scheduler = lr_scheduler.CosineScheduler(init_lr=0.5, max_iter=num_iter)
+        scheduler = ReduceLROnPlateau(init_lr=0.5)
         dummy_solver = S.Sgd(lr=0)
         dummy_solver.set_parameters(nn.get_parameters())
 
         for it in tqdm(range(num_iter)):
             print(it)
-            lr = scheduler.get_learning_rate(it)
+            lr = scheduler.get_learning_rate()
             solver.set_learning_rate(lr)
 
             global outs
@@ -64,6 +63,9 @@ def data_distill(uniform_data_iterator, num_iter):
             loss.backward()
             solver.weight_decay(1e-6)
             solver.update()
+
+            scheduler.update_lr(loss.d)
+
         generated_img.append(dst_img.d)
 
     return generated_img
