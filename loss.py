@@ -16,8 +16,8 @@ def own_loss(A, B):
 
 def zeroq_loss(batch_stats, outs, random_input):
     # batch stats loss
-    mean_loss = 0 
-    std_loss = 0
+    batch_mean_loss = 0 
+    batch_std_loss = 0
     for cnt, (bn_stat, out) in enumerate(zip(batch_stats, outs)):
         bn_mean = bn_stat['running_mean'][:, :, 0, 0] # (1, channels)
         bn_std = bn_stat['running_std'][:, :, 0, 0]# (1, channels)
@@ -33,8 +33,8 @@ def zeroq_loss(batch_stats, outs, random_input):
         print('std', tmp.d)
         """
         
-        mean_loss += own_loss(bn_mean, out_mean)
-        std_loss += own_loss(bn_std, out_std)
+        batch_mean_loss += own_loss(bn_mean, out_mean)
+        batch_std_loss += own_loss(bn_std, out_std)
         
     # input loss
     
@@ -44,8 +44,12 @@ def zeroq_loss(batch_stats, outs, random_input):
     random_input_std = UF.std(random_input, axis=(2,3)) # (batch, channels)
 
     
-    mean_loss += own_loss(input_mean, random_input_mean)
-    std_loss += own_loss(input_std, random_input_std)
+    input_mean_loss = own_loss(input_mean, random_input_mean)
+    input_std_loss = own_loss(input_std, random_input_std)
+    
+    batch_mean_loss.forward()
+    input_mean_loss.forward()
+    print('batch_mean_loss', batch_mean_loss.d, 'input_mean_loss', input_mean_loss.d)
 
-    total_loss = mean_loss + std_loss
+    total_loss = batch_mean_loss + batch_std_loss + input_mean_loss + input_std_loss
     return total_loss
