@@ -66,7 +66,7 @@ def data_distill(model, uniform_data_iterator, num_iter):
             global batch_stats
             batch_stats = []
 
-            y = model(denormalize(dst_img), force_global_pooling=True, training=False)
+            y = model(denormalize(dst_img), force_global_pooling=True, training=False) # denormalize to U(0, 255)
             y.forward(function_post_hook=get_output)
             assert len(outs) == len(batch_stats)
             loss = zeroq_loss(batch_stats, outs, dst_img)
