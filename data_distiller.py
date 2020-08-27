@@ -19,7 +19,7 @@ from tqdm import tqdm
 from nnabla.models.imagenet import ResNet18
 
 def get_output(f):
-    if f.name=='BatchNormalization':
+    if str(f.name).startswith('BatchNormalization'):
         """
         f.inputs = [
             input feature,
@@ -35,6 +35,10 @@ def get_output(f):
         stat['running_std'] = nn.Variable.from_numpy_array((f.inputs[4].d + 1e-6)**0.5, need_grad=False) 
         batch_stats.append(stat)
 
+def denormalize(x):
+    x = (x * 5418.75) + 127.5
+    return x
+
 
 def data_distill(model, uniform_data_iterator, num_iter):
     generated_img = []
@@ -45,7 +49,7 @@ def data_distill(model, uniform_data_iterator, num_iter):
         img_params = OrderedDict()
         img_params['img'] = dst_img
 
-        init_lr = 2.5
+        init_lr = 0.5
         solver = S.Adam(alpha=init_lr)
         solver.set_parameters(img_params)
         #scheduler = lr_scheduler.CosineScheduler(init_lr=0.5, max_iter=num_iter)
@@ -62,7 +66,7 @@ def data_distill(model, uniform_data_iterator, num_iter):
             global batch_stats
             batch_stats = []
 
-            y = model(dst_img, force_global_pooling=True, training=False)
+            y = model(denormalize(dst_img), force_global_pooling=True, training=False)
             y.forward(function_post_hook=get_output)
             assert len(outs) == len(batch_stats)
             loss = zeroq_loss(batch_stats, outs, dst_img)

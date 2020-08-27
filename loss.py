@@ -13,7 +13,19 @@ def own_loss(A, B):
     """
     return F.sum((A-B)**2) / B.shape[0]
 
+
+
 def input_loss_imagenet(input_data):
+
+    imagenet_mean=nn.Variable.from_numpy_array(np.array([[0.485, 0.456, 0.406]]))
+    imagenet_std=nn.Variable.from_numpy_array(np.array([[0.229, 0.224, 0.225]]))
+    
+    input_data_mean = F.mean(input_data, axis=(2,3)) # (batch, channels)
+    input_data_std = UF.std(input_data, axis=(2,3)) # (batch, channels)
+
+    input_mean_loss = own_loss(imagenet_mean, input_data_mean)
+    input_std_loss = own_loss(imagenet_std, input_data_std)
+    """
     input_data = (input_data * 0.01735) - 1.99 # normalize method of imagenet pretrained model
     input_data_mean = F.mean(input_data, axis=(2,3)) # (batch, channels)
     input_data_std = UF.std(input_data, axis=(2,3)) # (batch, channels)
@@ -25,10 +37,10 @@ def input_loss_imagenet(input_data):
     uniform_std = math.sqrt((255 - 0)**2 / 12)
     normalized_std = uniform_std * 0.01735
     pretrained_std = nn.Variable.from_numpy_array(np.ones((1,3)) * normalized_std)
-
+    
     input_mean_loss = own_loss(pretrained_mean, input_data_mean)
     input_std_loss = own_loss(pretrained_std, input_data_std)
-
+    """
     return input_mean_loss, input_std_loss
 
 def zeroq_loss(batch_stats, outs, random_input):
@@ -54,7 +66,7 @@ def zeroq_loss(batch_stats, outs, random_input):
         std_loss += own_loss(bn_std, out_std)
         
     # input loss
-    """
+    
     input_mean = nn.Variable.from_numpy_array(np.ones((1,3)))
     input_std = nn.Variable.from_numpy_array(np.ones((1,3)))
     random_input_mean = F.mean(random_input, axis=(2,3)) # (batch, channels)
@@ -67,6 +79,6 @@ def zeroq_loss(batch_stats, outs, random_input):
     input_mean_loss, input_std_loss = input_loss_imagenet(random_input)
     mean_loss += input_mean_loss
     std_loss += input_std_loss
-
+    """
     total_loss = mean_loss + std_loss
     return total_loss
