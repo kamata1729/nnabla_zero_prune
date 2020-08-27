@@ -21,6 +21,16 @@ def zeroq_loss(batch_stats, outs, random_input):
         bn_std = bn_stat['running_std'][:, :, 0, 0]# (1, channels)
         out_mean = F.mean(out, axis=(2,3))# (batch, channels)
         out_std = UF.std(out, axis=(2,3))# (batch, channels)
+        """
+        tmp = own_loss(bn_mean, out_mean)
+        tmp.forward()
+        print('mean', tmp.d)
+        
+        tmp =own_loss(bn_std, out_std)
+        tmp.forward()
+        print('std', tmp.d)
+        """
+        
         mean_loss += own_loss(bn_mean, out_mean)
         std_loss += own_loss(bn_std, out_std)
         

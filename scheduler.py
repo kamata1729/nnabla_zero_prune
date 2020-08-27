@@ -81,7 +81,7 @@ class ReduceLROnPlateauScheduler(lr_scheduler.BaseLearningRateScheduler):
             self.lr = new_lr
             if self.verbose:
                 print('Epoch {:5d}: reducing learning rate'
-                      ' of group {} to {:.4e}.'.format(epoch, i, new_lr))
+                      'to {:.4e}.'.format(epoch, new_lr))
                 
     def get_learning_rate(self):
         if not self.is_lr_updated:

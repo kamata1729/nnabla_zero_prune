@@ -40,16 +40,16 @@ def data_distill(model, uniform_data_iterator, num_iter):
     generated_img = []
     for _ in range(uniform_data_iterator.size // uniform_data_iterator.batch_size):
         img, _ = uniform_data_iterator.next()
-        print((*img.shape))
         dst_img = nn.Variable(img.shape, need_grad=True)
         dst_img.d = img
         img_params = OrderedDict()
         img_params['img'] = dst_img
 
-        solver = S.Adam(alpha=0.5)
+        init_lr = 2.5
+        solver = S.Adam(alpha=init_lr)
         solver.set_parameters(img_params)
         #scheduler = lr_scheduler.CosineScheduler(init_lr=0.5, max_iter=num_iter)
-        scheduler = ReduceLROnPlateauScheduler(init_lr=0.5, min_lr=1e-4, verbose=False, patience=100)
+        scheduler = ReduceLROnPlateauScheduler(init_lr=init_lr, min_lr=1e-4, verbose=False, patience=100)
         dummy_solver = S.Sgd(lr=0)
         dummy_solver.set_parameters(nn.get_parameters())
 
