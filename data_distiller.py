@@ -36,7 +36,7 @@ def get_output(f):
         batch_stats.append(stat)
 
 def denormalize(x):
-    x = (x * 5418.75) + 127.5
+    x = (x * math.sqrt(5418.75)) + 127.5
     return x
 
 

@@ -1,3 +1,4 @@
+import math
 import nnabla as nn
 import numpy as np
 from nnabla.utils.data_source import DataSource
@@ -14,7 +15,7 @@ class UniformData(DataSource):
         self._train = train
         self._images = np.random.randint(0,255,(length, 3, 224, 224)) # U(0, 255)
         # var[U(-128, 127)] = (127 - (-128))**2 / 12 = 5418.75
-        self._images = (self._images.astype(np.float) - 127.5) / 5418.75 
+        self._images = (self._images.astype(np.float) - 127.5) / math.sqrt(5418.75)
         self._labels = np.random.randint(0, 1000, length).reshape(-1, 1)
         self._size = self._labels.size
         self._variables = ('x', 'y')
